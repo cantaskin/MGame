@@ -293,10 +293,10 @@ void ARunCharacter::ServerRespawn_Implementation()
 		if (RunGameMode->CharacterClass != nullptr)
 		{
 			ARunCharacter* NewCharacter = GetWorld()->SpawnActor<ARunCharacter>(RunGameMode->CharacterClass, InitialLocation, FRotator::ZeroRotator);
-			NewCharacter->TotalCharacters = 0;
 
 			if (NewCharacter)
 			{
+				NewCharacter->TotalCharacters = 0;
 				PlayerController->Possess(NewCharacter);
 			}
 			else
