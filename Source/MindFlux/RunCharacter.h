@@ -28,6 +28,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Config")
 	bool CountCharacters;
 
+	UPROPERTY(VisibleAnywhere)
+	int32 TotalCoins = 0;
+
 	// Count the total number of characters
 	UPROPERTY(Replicated)
 	int32 TotalCharacters;
@@ -46,7 +49,7 @@ public:
 	void Server_OnTrigger_Implementation(bool isRight);
 
 
-	UFUNCTION(BlueprintCallable,Server, Reliable, WithValidation)
+	UFUNCTION(BlueprintCallable, Server, Reliable, WithValidation)
 	void ServerRespawn();
 	void ServerRespawn_Implementation();
 	bool ServerRespawn_Validate();
@@ -77,6 +80,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void Death();
+
+	UFUNCTION()
+	void AddCoin();
 
 	// Sets default values for this character's properties
 	ARunCharacter();

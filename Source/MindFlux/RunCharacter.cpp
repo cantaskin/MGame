@@ -95,6 +95,13 @@ void ARunCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 }
 
 
+void ARunCharacter::AddCoin() {
+	TotalCoins++;
+
+	UE_LOG(LogTemp, Warning, TEXT("Total Coins: %d"), TotalCoins);
+}
+
+
 void ARunCharacter::MoveLeft() 
 {
 	//UE_LOG(LogTemp, Warning, TEXT("MOVELEFT %d"), GetWorld()->IsServer());
@@ -134,7 +141,6 @@ void ARunCharacter::OnDeath()
 		GetWorldTimerManager().ClearTimer(RestartTimerHandle);
 	}
 	*/
-
 	
 	if (GetWorld()->IsServer()) {
 		Client_OnTrigger();
@@ -293,10 +299,10 @@ void ARunCharacter::ServerRespawn_Implementation()
 		if (RunGameMode->CharacterClass != nullptr)
 		{
 			ARunCharacter* NewCharacter = GetWorld()->SpawnActor<ARunCharacter>(RunGameMode->CharacterClass, InitialLocation, FRotator::ZeroRotator);
+			NewCharacter->TotalCharacters = 0;
 
 			if (NewCharacter)
 			{
-				NewCharacter->TotalCharacters = 0;
 				PlayerController->Possess(NewCharacter);
 			}
 			else
@@ -371,3 +377,4 @@ void ARunCharacter::TouchEnded(ETouchIndex::Type FingerIndex, FVector Location)
 		MoveDown();
 	}
 }
+
