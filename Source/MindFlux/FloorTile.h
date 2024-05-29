@@ -6,8 +6,18 @@
 #include "Components/ArrowComponent.h"
 #include "GameFramework/Actor.h"
 #include "Obstacle.h"
+#include "MindFluxGameModeBase.h"
+#include "CoinItem.h"
+#include "FlyItem.h"
+#include "IM_Item.h"
+#include "HandwristItem.h"
 #include "FloorTile.generated.h"
 
+
+class ACoinItem;
+class AFlyItem;
+class AIM_Item;
+class AHadnwristItem;
 class UStaticMeshComponent;
 class UArrowComponent;
 class UBoxComponent;
@@ -26,6 +36,18 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config")
 	TSubclassOf<AObstacle> BigObstacleClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config")
+	TSubclassOf<ACoinItem> CointItemClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config")
+	TSubclassOf<AFlyItem> FlyItemClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config")
+	TSubclassOf<AIM_Item> IM_ItemClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config")
+	TSubclassOf<AHandwristItem> HandWristItemClass;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USceneComponent* SceneComponent;
@@ -48,8 +70,17 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UBoxComponent* FloorTriggerBox;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config")
+	float SpawnPercent1 = 0.2f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config")
+	float SpawnPercent2 = 0.3f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config")
+	float SpawnPercent3 = 0.5f;
+
 	UFUNCTION(BlueprintCallable)
-	void SpawnItems();
+	void SpawnItems(FMapsDetail MapDetail);
 
 	int count = 0;
 
@@ -70,7 +101,7 @@ protected:
 	void OnTriggerBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UFUNCTION()
-	int SpawnLaneItem(UArrowComponent* Lane, int totalBigObstacle);
+	int SpawnLaneItem(FMapsDetail MapDetail, UArrowComponent* Lane, int totalBigObstacle);
 	
 	UPROPERTY()
 	FTimerHandle DestroyHandle;
