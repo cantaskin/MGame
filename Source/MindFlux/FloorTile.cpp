@@ -64,43 +64,67 @@ void AFloorTile::OnTriggerBoxOverlap(UPrimitiveComponent* OverlappedComponent, A
 	//UE_LOG(LogTemp, Warning, TEXT("OnTriggerBoxOverlap %d Count %d CharcId: %s"), GetWorld()->IsServer(), count, *RunCharacter->GetName());
 	//if (RunCharacter) {
 		//if (GetWorld()->IsServer() && count == 2) {
-		if (GetWorld()->IsServer()) {
-			RunGameMode->AddFloorTile(true);
-			GetWorldTimerManager().SetTimer(DestroyHandle, this, &AFloorTile::DestroyFloorTile, 3.f, false);
-		}
+
+
+			//RunGameMode->AddFloorTile(true);
+			//GetWorldTimerManager().SetTimer(DestroyHandle, this, &AFloorTile::DestroyFloorTile, 3.f, false);
 	//}
 }
 
-void AFloorTile::SpawnItems()
+void AFloorTile::SpawnItems(FMapsDetail MapDetail)
 {
-	if (IsValid(SmallObstacleClass) && IsValid(BigObstacleClass)) {
-		int res1 = SpawnLaneItem(CenterLane, 0);
-		int res2 = SpawnLaneItem(RightLane, res1);
-		SpawnLaneItem(LeftLane, res1 + res2);
+	if (IsValid(SmallObstacleClass)&&IsValid(BigObstacleClass)&&IsValid(CointItemClass)&&IsValid(FlyItemClass)&&IsValid(IM_ItemClass)&&IsValid(HandWristItemClass) ){
+		int res1 = SpawnLaneItem(MapDetail,CenterLane, 0);
+		int res2 = SpawnLaneItem(MapDetail,RightLane, res1);
+		SpawnLaneItem(MapDetail,LeftLane, res1 + res2);
 	}
 	
 }
 
 int AFloorTile::
-SpawnLaneItem(UArrowComponent* Lane, int totalBigObstacle)
+SpawnLaneItem(FMapsDetail MapDetail,UArrowComponent* Lane, int totalBigObstacle)
 {
 	const float RandVal = FMath::FRandRange(0.f, 1.f);
 	FActorSpawnParameters SpawnParameters;
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-	const FTransform& SpawnLocation = Lane->GetComponentTransform();
+	FTransform SpawnLocation = Lane->GetComponentTransform();
 
 	int res = 0;
-	if (totalBigObstacle == 2 || UKismetMathLibrary::InRange_FloatFloat(RandVal,0.5f,0.75f,true,true))
+	if (totalBigObstacle == 2 || UKismetMathLibrary::InRange_FloatFloat(RandVal,SpawnPercent1,SpawnPercent2,true,true))
 	{
 		
-		AObstacle* Obstacle = GetWorld()->SpawnActor<AObstacle>(SmallObstacleClass, SpawnLocation, SpawnParameters);
+		AObstacle* Obstacle = GetWorld()->SpawnActor<AObstacle>(MapDetail.SmallObstacle, SpawnLocation, SpawnParameters);
 	}
-	else if (UKismetMathLibrary::InRange_FloatFloat(RandVal, 0.75f, 1.f, true, true))
+	else if (UKismetMathLibrary::InRange_FloatFloat(RandVal, SpawnPercent2, SpawnPercent3, true, true))
 	{
 
-		AObstacle* Obstacle = GetWorld()->SpawnActor<AObstacle>(BigObstacleClass, SpawnLocation, SpawnParameters);
+		AObstacle* Obstacle = GetWorld()->SpawnActor<AObstacle>(MapDetail.BigObstacle, SpawnLocation, SpawnParameters);
 		res = 1;
+	}
+	else if (UKismetMathLibrary::InRange_FloatFloat(RandVal, SpawnPercent3, 1.f, true, true))
+	{
+		SpawnLocation.SetLocation(SpawnLocation.GetLocation() + FVector(0.f, 0.f, 65.f));  // Adjust height above the floor
+		ACoinItem* Coin = GetWorld()->SpawnActor<ACoinItem>(CointItemClass, SpawnLocation, SpawnParameters);
+		
+	}
+	else if (UKismetMathLibrary::InRange_FloatFloat(RandVal, 0.f, 0.05f, true, true))
+	{
+		SpawnLocation.SetLocation(SpawnLocation.GetLocation() + FVector(0.f, 0.f, 65.f));  // Adjust height above the floor
+		AFlyItem* Fly = GetWorld()->SpawnActor<AFlyItem>(FlyItemClass, SpawnLocation, SpawnParameters);
+
+	}
+	else if (UKismetMathLibrary::InRange_FloatFloat(RandVal, 0.05f, 0.1f, true, true))
+	{
+		SpawnLocation.SetLocation(SpawnLocation.GetLocation() + FVector(0.f, 0.f, 65.f));  // Adjust height above the floor
+		AIM_Item* ImageProcessing = GetWorld()->SpawnActor<AIM_Item>(IM_ItemClass, SpawnLocation, SpawnParameters);
+
+	}
+	else if (UKismetMathLibrary::InRange_FloatFloat(RandVal, 0.1f, 0.2f, true, true))
+	{
+		SpawnLocation.SetLocation(SpawnLocation.GetLocation() + FVector(0.f, 0.f, 65.f));  // Adjust height above the floor
+		AHandwristItem* HandWrist = GetWorld()->SpawnActor<AHandwristItem>(HandWristItemClass, SpawnLocation, SpawnParameters);
+
 	}
 	return res;
 }
