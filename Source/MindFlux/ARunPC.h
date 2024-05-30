@@ -6,7 +6,6 @@
 #include "GameFramework/PlayerController.h"
 #include "ARunPC.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHeartDelegate, int, HearthCount);
 
 /**
  * 
@@ -20,10 +19,7 @@ public:
 
     UPROPERTY(BlueprintReadWrite,EditAnywhere)
     int32 TotalHeart = 3;
-
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, BlueprintAssignable)
-    FHeartDelegate HeartDelegate;
+	
 
     // RPC to notify server that the player is ready
     UFUNCTION(BlueprintCallable, Category = "UI", Server, Reliable, WithValidation)
@@ -33,6 +29,11 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "UI")
     void OnReadyButtonClicked();
+
+    UFUNCTION(Client, Reliable)
+    void Client_UpdateTotalHeart(int32 NewTotalHeart);
+
+
 
 protected:
     virtual void BeginPlay() override;

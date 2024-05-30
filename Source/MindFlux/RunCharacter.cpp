@@ -2,6 +2,7 @@
 
 #include "RunCharacter.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -97,12 +98,78 @@ void ARunCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 
 
 void ARunCharacter::AddCoin() {
-	TotalCoins++;
+	float ZPosition = GetActorLocation().Z;
+
+	if (ZPosition > 200.f) {
+		TotalCoins += 2; // Add two coins if the character is above 200 units in height
+	}
+	else {
+		TotalCoins++; // Otherwise, add just one coin
+	}
 }
 
 void ARunCharacter::Fly() {
+	
 	UE_LOG(LogTemp, Warning, TEXT("Got Fly Item"));
+	ServerFly_OnTrigger_Implementation(0);
+
 }
+
+void ARunCharacter::EndFly()
+{
+	ServerFly_OnTrigger_Implementation(1);
+}
+
+
+bool ARunCharacter::ServerFly_OnTrigger_Validate(bool isEnd)
+{
+	return true;
+}
+
+
+void ARunCharacter::ServerFly_OnTrigger_Implementation(bool isEnd) {
+
+	if (!isEnd) {
+
+		
+
+		// Disable gravity for the duration of the flight
+		if (GetCharacterMovement())
+		{
+			GetCharacterMovement()->GravityScale = 0.0f; // Disable gravity
+		}
+
+		// Define how high the character should fly and for how long.
+		float FlyHeight = 300.0f; // Height above the ground
+		float FlyDuration = 5.0f; // Duration of the flight in seconds
+
+		FVector CurrentLocation = GetActorLocation();
+		FVector FlyLocation = CurrentLocation + FVector(0.0f, 0.0f, FlyHeight);
+
+		// Set the new location with flying height.
+		SetActorLocation(FlyLocation, true);
+
+		// Set a timer to end flying after FlyDuration seconds.
+		GetWorldTimerManager().SetTimer(FlyTimerHandle, this, &ARunCharacter::EndFly, FlyDuration, false);
+	}
+	else {
+		// Restore gravity to its original setting
+		if (GetCharacterMovement())
+		{
+			GetCharacterMovement()->GravityScale = 1.0f; // Restore gravity
+		}
+
+		// Return to the original location or reduce the Z-coordinate by the fly height.
+		FVector CurrentLocation = GetActorLocation();
+		FVector GroundLocation = CurrentLocation - FVector(0.0f, 0.0f, 300.0f); // Adjust height as needed
+
+		SetActorLocation(GroundLocation, true);
+
+		// Clear the timer
+		GetWorldTimerManager().ClearTimer(FlyTimerHandle);
+	}
+}
+
 
 void ARunCharacter::GetImageProcessing() {
 	UE_LOG(LogTemp, Warning, TEXT("Got Image Processing Item"));
@@ -152,6 +219,7 @@ void ARunCharacter::OnDeath()
 		GetWorldTimerManager().ClearTimer(RestartTimerHandle);
 	}
 	*/
+
 	
 	if (GetWorld()->IsServer()) {
 		Client_OnTrigger();
@@ -241,27 +309,15 @@ void ARunCharacter::OnDeath()
 		}
 	}
 }
+
+//burada başlıyor
 void ARunCharacter::Death()
 {
 	if (!bIsDead) {
 
-		if (auto RunPC = Cast<AARunPC>(GetController()))
-		{
-			if (GetWorld()->IsServer() && RunPC->TotalHeart <= 0)
-			{
-				//Quit Game
-				//UKismetSystemLibrary::QuitGame(GetWorld(), RunPC);
-			}
-			RunPC->TotalHeart--;
-			RunPC->HeartDelegate.Broadcast(RunPC->TotalHeart);
-		}
-
-
 		const FVector Location = GetActorLocation();
 
 		UWorld* World = GetWorld();
-
-
 
 		if (World) {
 			//bIsDead = true;
@@ -274,24 +330,49 @@ void ARunCharacter::Death()
 			if (DeathSound) {
 				UGameplayStatics::PlaySoundAtLocation(World, DeathSound, Location);
 			}
-
+			
 			GetMesh()->SetVisibility(false);
-
-			if (HasAuthority())
+			if (AARunPC* PCRun = Cast<AARunPC>(GetController()))
 			{
-				Client_OnTrigger();
-				ServerRespawn();
-			}
-			else
-			{
-				ServerRespawn();
-			}
+				
+				FVector TempLocation;
+				if (PCRun->TotalHeart <= 0)
+				{
+					TempLocation = FVector(50.0f, 0.0f, 112.000687f);
+					
+					PCRun->TotalHeart = 3;
+					SpawnWithLocation(TempLocation);
+					
+				}
+				else
+				{
+					TempLocation = FVector(Location.X-RespawnDistance,Location.Y,Location.Z);
+					PCRun->TotalHeart--;
+					PCRun->Client_UpdateTotalHeart(PCRun->TotalHeart);
+					SpawnWithLocation(TempLocation);
+					
+				}
+				
+		//	}
+		}
 			//World->GetTimerManager().SetTimer(RestartTimerHandle, this, &ARunCharacter::OnDeath, 1.f);
 
 		}
 	}
 }
 	
+void ARunCharacter::SpawnWithLocation(FVector Location)
+{
+	if (HasAuthority())
+	{
+		Client_OnTrigger();
+		ServerRespawn(Location);
+	}
+	else
+	{
+		ServerRespawn(Location);
+	}
+} //burada bitiyor
 
 bool ARunCharacter::Server_OnTrigger_Validate(bool isRight)
 {
@@ -311,13 +392,12 @@ void ARunCharacter::Server_OnTrigger_Implementation(bool isRight)
 	}
 }
 
-void ARunCharacter::ServerRespawn_Implementation()
+void ARunCharacter::ServerRespawn_Implementation(FVector Location)
 {
 	APlayerController* PlayerController = Cast<APlayerController>(GetController());
 	if (PlayerController)
 	{
 		APawn* ControlledPawn = PlayerController->GetPawn();
-		FVector InitialLocation(50.0f, 0.0f, 112.000687f);
 
 		if (ControlledPawn)
 		{
@@ -329,7 +409,7 @@ void ARunCharacter::ServerRespawn_Implementation()
 		}
 		if (RunGameMode->CharacterClass != nullptr)
 		{
-			ARunCharacter* NewCharacter = GetWorld()->SpawnActor<ARunCharacter>(RunGameMode->CharacterClass, InitialLocation, FRotator::ZeroRotator);
+			ARunCharacter* NewCharacter = GetWorld()->SpawnActor<ARunCharacter>(RunGameMode->CharacterClass, Location, FRotator::ZeroRotator);
 			NewCharacter->TotalCharacters = 0;
 			
 
@@ -351,7 +431,7 @@ void ARunCharacter::ServerRespawn_Implementation()
 	GetWorldTimerManager().SetTimer(RunGameMode->RespawnTimerHandle, RunGameMode, &AMindFluxGameModeBase::StartCharactersTicking, 3.f, false);
 }
 
-bool ARunCharacter::ServerRespawn_Validate()
+bool ARunCharacter::ServerRespawn_Validate(FVector Location)
 {
 	return true; 
 }

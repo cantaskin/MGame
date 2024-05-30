@@ -7,8 +7,6 @@
 #include "Net/UnrealNetwork.h"
 #include "RunCharacter.generated.h"
 
-
-
 UCLASS()
 class MINDFLUX_API ARunCharacter : public ACharacter
 {
@@ -25,6 +23,8 @@ private:
 	UPROPERTY(VisibleInstanceOnly)
 	class AMindFluxGameModeBase* RunGameMode;
 
+	FTimerHandle FlyTimerHandle;
+
 public:
 
 	UPROPERTY(EditAnywhere, Category = "Config")
@@ -33,6 +33,8 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	int32 TotalCoins = 0;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 RespawnDistance = 1000;
 
 	// Count the total number of characters
 	UPROPERTY(Replicated)
@@ -51,11 +53,15 @@ public:
 	bool Server_OnTrigger_Validate(bool isRight);
 	void Server_OnTrigger_Implementation(bool isRight);
 
+	UFUNCTION(Server, Reliable, WithValidation)
+	void ServerFly_OnTrigger(bool isEnd);
+	bool ServerFly_OnTrigger_Validate(bool isEnd);
+	void ServerFly_OnTrigger_Implementation(bool isEnd);
 
 	UFUNCTION(BlueprintCallable, Server, Reliable, WithValidation)
-	void ServerRespawn();
-	void ServerRespawn_Implementation();
-	bool ServerRespawn_Validate();
+	void ServerRespawn(FVector Location);
+	void ServerRespawn_Implementation(FVector Location);
+	bool ServerRespawn_Validate(FVector Location);
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Assets")
 	class UParticleSystem* DeathParticleSystem;
@@ -83,12 +89,16 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void Death();
+	void SpawnWithLocation(FVector Location);
 
 	UFUNCTION()
 	void AddCoin();
 
 	UFUNCTION()
 	void Fly();
+
+	UFUNCTION()
+	void EndFly();
 
 	UFUNCTION()
 	void GetImageProcessing();

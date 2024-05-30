@@ -7,7 +7,6 @@
 void AARunPC::BeginPlay()
 {
     Super::BeginPlay();
-
     TotalHeart = 3;
 }
 
@@ -34,4 +33,10 @@ void AARunPC::OnReadyButtonClicked()
 
         ServerSetPlayerReady();
     }
+}
+//burada başlıyor
+void AARunPC::Client_UpdateTotalHeart_Implementation(int32 NewTotalHeart)
+{
+    TotalHeart = NewTotalHeart;
+    UE_LOG(LogTemp, Warning, TEXT("Client_UpdateTotalHeart: TotalHeart updated to: %d"), TotalHeart);
 }
